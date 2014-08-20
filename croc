@@ -207,4 +207,20 @@ then
     TEST=1
 fi
 
+if [[ "$@" =~ "--help" ]] || [[ -z "$@" ]]
+then
+    cat <<EOL >&2
+Usage: ${stage} [OPTION]... [ARGS]...
+Executes the ${stage} hook with the corresponding arguments.
+See githook(5) for arguments.
+
+OPTIONS:
+  --test        for any hook in ${stage}.d, run it on all the files in
+                ${stage}.d/hook.tests/
+  --verbose     writes the output of each test to stdout
+  --help        displays this help and exit
+EOL
+    exit 1
+fi
+
 main "$@"
