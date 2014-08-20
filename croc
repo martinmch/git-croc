@@ -174,12 +174,10 @@ main () {
         fi
     done
 
-    declare -r totalTests=$((passedTests + failedTests + skippedTests))
-
     printf 'Passed: %s  ' "$passedTests"
     printf 'Failed: %s  ' "$failedTests"
     printf 'Skipped: %s  ' "$skippedTests"
-    printf 'Total: %s\n' "$totalTests"
+    printf 'Total: %s\n' "$((passedTests + failedTests + skippedTests))"
 
     if [ $VERBOSE ]
     then
