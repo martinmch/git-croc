@@ -23,11 +23,6 @@ then
     exit 1
 fi
 
-if [[ "$@" =~ "--verbose" ]]
-then
-    VERBOSE=1
-fi
-
 # Ansi escape codes used for coloring output
 readonly GREEN="\e[32m"
 readonly RED="\e[31m"
@@ -152,5 +147,11 @@ main () {
 
     exit $failedTests
 }
+
+
+if [[ "$@" =~ "--verbose" ]]
+then
+    VERBOSE=1
+fi
 
 main "$@"
