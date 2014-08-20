@@ -121,7 +121,7 @@ main () {
         fi
 
         # Save the output for anyone interested.
-        $hook > "/tmp/pre-commit-${hookName}" 2>&1
+        $hook "$@" > "/tmp/${stage}-${hookName}" 2>&1
         retVal=$?
         if [ $retVal -gt 0 ]
         then
@@ -153,4 +153,4 @@ main () {
     exit $failedTests
 }
 
-main
+main "$@"
