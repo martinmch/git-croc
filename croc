@@ -182,10 +182,14 @@ main () {
     if [ $VERBOSE ]
     then
         printf '\nOutput:\n'
-        for hook in "$stagedir"/*
+        for output in "/tmp/${stage}-"*
         do
-            printf '%s:\n' ${hookName}
-            cat "/tmp/${stage}-${hookName}" | sed 's/^/\t/'
+            if [ ! -f "$output" ]
+            then
+                continue
+            fi
+            printf '%s:\n' ${output#*${stage}-}
+            cat "$output" | sed 's/^/\t/'
         done
     fi
 
