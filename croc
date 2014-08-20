@@ -48,6 +48,52 @@ print_line () {
     printf '%b' "$RESET"
 }
 
+run_and_print () {
+    local -r hookFileName="$1"
+    local -r hookExePath="$2"
+    shouldFail=false
+    shift 2
+
+    hookName="${hookFileName%.*}"
+    if [ $TEST ]
+    then
+        hookName="$(basename "$@")"
+        if [[ "$hookName" == *".fails" ]]; then
+            shouldFail=true
+        fi
+    fi
+
+    # To allow skipping of tests, we determine if the hook ends in
+    # "*.skip"
+    if [[ "$hookFileName" == *".skip" ]]
+    then
+        skippedTests=$((failedTests+1))
+        print_line "$hookName" "SKIPPED" "$YELLOW"
+        continue
+    fi
+
+    # To allow tests to fail, we determine if the hook ends  in
+    # "*.fails"
+    if [[ "$hookFileName" == *".fails" ]]
+    then
+        skippedTests=$((failedTests+1))
+        print_line "$hookName" "SKIPPED" "$YELLOW"
+        continue
+    fi
+
+    # Save the output for anyone interested.
+    "$hookExePath" "$@" > "/tmp/${stage}-${hookName}" 2>&1
+    retVal=$?
+    if [ $retVal -gt 0 ] && [ "$shouldFail" = false ]
+    then
+        failedTests=$((failedTests+1))
+        print_line "$hookName" "FAILED" "${RED}"
+    else
+        passedTests=$((passedTests+1))
+        print_line "$hookName" "PASSED" "${GREEN}"
+    fi
+}
+
 # We use this seemingly superfluous function to ensure, that the global
 # ENV doesn't get polluted with all our variables.
 main () {
@@ -79,12 +125,19 @@ main () {
 
     for hook in "$stagedir"/*
     do
-        local -r hookFileName=$(basename "${hook}")
-        if [ ! -f "$hook" ]
+        # Ignore directories (tests)
+        if [ -d "$hook" ]
         then
-            1>&2 echo "$stage: cannot access '$hookFileName': No such file"
             continue
         fi
+
+        if [ ! -f "$hook" ]
+        then
+            1>&2 echo "$stage: cannot access '$hook': No such file"
+            continue
+        fi
+
+        hookFileName=$(basename "${hook}")
 
         if [ ! -x "$hook" ] || [ ! -r "$hook" ]
         then
@@ -102,29 +155,22 @@ main () {
             continue
         fi
 
-        # When printing, we don't want to show the skip part of the
-        # name. The extension is removed.
-        declare -r hookName="${hookFileName%.*}"
-
-        # To allow skipping of tests, we determine if the hook ends in
-        # "*.skip"
-        if [[ "$hookFileName" == *".skip" ]]
+        if [ $TEST ]
         then
-            skippedTests=$((failedTests+1))
-            print_line "$hookName" "SKIPPED" "$YELLOW"
-            continue
-        fi
-
-        # Save the output for anyone interested.
-        $hook "$@" > "/tmp/${stage}-${hookName}" 2>&1
-        retVal=$?
-        if [ $retVal -gt 0 ]
-        then
-            failedTests=$((failedTests+1))
-            print_line "$hookName" "FAILED" "${RED}"
+            # When printing, we don't want to show the skip part of the
+            # name. The extension is removed.
+            printf 'Testing %s:\n' "${hookFileName%.*}"
+            for testName in "$hook".tests/*
+            do
+                if [ ! -f "$testName" ]
+                then
+                    printf "no tests available\n"
+                    continue
+                fi
+                run_and_print "$hookFileName" "$hook" "$testName"
+            done
         else
-            passedTests=$((passedTests+1))
-            print_line "$hookName" "PASSED" "${GREEN}"
+            run_and_print "$hookFileName" "$hook" "$@"
         fi
     done
 
@@ -152,6 +198,11 @@ main () {
 if [[ "$@" =~ "--verbose" ]]
 then
     VERBOSE=1
+fi
+
+if [[ "$@" =~ "--test" ]]
+then
+    TEST=1
 fi
 
 main "$@"
