@@ -23,6 +23,11 @@ then
     exit 1
 fi
 
+if [[ "$@" =~ "--verbose" ]]
+then
+    VERBOSE=1
+fi
+
 # Ansi escape codes used for coloring output
 readonly GREEN="\e[32m"
 readonly RED="\e[31m"
@@ -55,6 +60,9 @@ main () {
     local skippedTests=0
     local failedTests=0
     local -r stagedir="$(dirname "$0")"/"$stage".d
+
+    # Remove old output files
+    rm -rf -- "/tmp/${stage}-*"
 
     if [ ! -d "$stagedir" ]
     then
@@ -131,6 +139,16 @@ main () {
     printf 'Failed: %s  ' "$failedTests"
     printf 'Skipped: %s  ' "$skippedTests"
     printf 'Total: %s\n' "$totalTests"
+
+    if [ $VERBOSE ]
+    then
+        printf '\nOutput:\n'
+        for hook in "$stagedir"/*
+        do
+            printf '%s:\n' ${hookName}
+            cat "/tmp/${stage}-${hookName}" | sed 's/^/\t/'
+        done
+    fi
 
     exit $failedTests
 }
