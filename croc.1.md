@@ -25,6 +25,17 @@ directory of these files.
 
 **$ git config core.hooksPath ".hooks"**
 
+the options are as follows:
+
+**--verbose**
+:   Print the output of all hooks to stdout.
+
+**--help**
+:   Shows the usage message.
+
+**--test**
+:   Run the tests for all hooks in a given stage.
+
 # EXAMPLE
 
 To enable pre-commit hooks, run the following commands:
@@ -34,6 +45,16 @@ To enable pre-commit hooks, run the following commands:
 
 Add (or symlink) any hooks into this directory to have them run during
 pre-commit.
+
+## REGISTERING HOOKS
+
+To register a hook add a link to the hook in the stage.d directory.
+
+## TESTING
+
+To write a test for a hook, create a corresponding folder called
+hook.tests. Depending on the hook, put your test files in here. If the
+test is supposed to fail, postfix it with ".fails".
 
 # EXIT STATUS
 
